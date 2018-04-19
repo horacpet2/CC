@@ -20,15 +20,15 @@ Pøekladaè nejprve interpretuje tìla funkcí, které jsou v základní knihovnì defin
 
 # Popis architektury
 Celý pøekladaè se skládá z nìkolika vrstev:
-*LINK
+* LINK
+ 
+* ASM - pøekladaè jazyka symbolických adres, jedná se o platformnì závislou vrstvu, kterou je nutné upravit pro každou cílovou platformu
 
-*ASM - pøekladaè jazyka symbolických adres, jedná se o platformnì závislou vrstvu, kterou je nutné upravit pro každou cílovou platformu
+* TRANS - vygeneruje kód v jazyce symbolických adres.
 
-*TRANS - vygeneruje kód v jazyce symbolických adres.
+* PREPROC - pøedzpracuje zdrojové kódy
 
-*PREPROC - pøedzpracuje zdrojové kódy
-
-*TOOL - nástroje, které manipulují se zdrojovým kódem
+* TOOL - nástroje, které manipulují se zdrojovým kódem
 
 
 # Preprocesor 
@@ -77,7 +77,14 @@ do místa volání makra je nakopírován celý obsah makra který se nachází za jménam
 
 
 
-
+(fce void funkce [int a]
+	(println "neco %d" a)
+	(* (+ a 10) 50)
+	
+	(if (< a b)
+		(println "neco")
+	)
+)
 
 
 
