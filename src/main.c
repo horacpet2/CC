@@ -11,8 +11,8 @@
 ** Author: Petr Horacek
 ** File: main.c
 ** Created: 13.04.2018
-** Last update: 19.04.2018
-** Version: 0.2.0
+** Last update: 20.04.2018
+** Version: 0.2.1
 **
 ** 
 */ 
@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-
+#include <ctype.h>
 
 
 
@@ -36,14 +36,14 @@
 **
 */ 
 
-enum _output_status_
+enum _core_state_
 {
-	status_ok = 0,
-	status_exit_success,
-	status_in_param_error,
-	status_no_input_file,
+	state_ok = 0,
+	state_exit_success,
+	state_in_param_error,
+	state_no_input_file,
 
-	status_unknown_error = 255
+	state_unknown_error = 255
 };
 
 
@@ -118,6 +118,21 @@ void* linked_list_get_pre(linked_list* this);
 ** input commands. Every state changes ocures printing some label to output. 
 ** 
 ** 
+** When is run the compilation, then is created number of paralel thread, how many 
+** files was given on the input. Every thread processing one file and on the end 
+** are every processed source codes split in one source.
+**
+**
+** uint8_t core_state - internal state of compiler core with code definition in enum _core_state_
+** linked_list* file_list - linked list contains list of input files for compilation
+** linked_list* path_list - linked list contains list of path with external sources
+** char* o_file_name - string with output file name, default value is "out"
+** bool quiet_mode - specifies quiet mode of compilation, no output messages from compiler
+** bool s_break - output of compilation is source code in assembler form
+** bool p_break - output of compilation is preprocessed source code 
+** bool print_code_info - analyze source code and print information about project
+** char* error_log - string with length 255 character for store error message
+**
 */ 
 
 struct _core_
@@ -130,6 +145,7 @@ struct _core_
 	bool s_break;
 	bool p_break;
 	bool print_code_info;
+	char* error_log;
 };
 typedef struct _core_ core; 
 
@@ -182,9 +198,12 @@ void core_print_help();
 ** - (macro id [param_1, param_2, ... param_n] "body of macro") - define the macro with name of id, all text 
 **   in body of macro section is 
 **   inserted to points of call
+** - (undef name) - undefine (remove) the given macro
 ** - (include path/file) - include text from the given file into the source code
+** - (mark) - return 128-bit pseudorandom value, used for jump identificatiors and other purposes
+** Preprocesor also removing all aditional white spaces: space keys, tabulators
 **
-** Preprocesor additionaly removing all white spaces: space keys, tabulators
+** All macros commands should be used in macro definitions
 */
 
 
@@ -194,10 +213,11 @@ core* core_new()
 {
 	core* this = (core*) malloc(sizeof(core));
 	
-	this->core_state = status_no_input_file;
+	this->core_state = state_no_input_file;
 	this->file_list = linked_list_new();
 	this->path_list = linked_list_new();
-	this->o_file_name = NULL;
+	this->o_file_name = "out";
+	this->error_log = (char*) malloc(sizeof(char)*255);
 
 	return this;
 }
@@ -210,14 +230,21 @@ core* core_new()
 ** After parameters parse must be the core_state set on status_ok, every other values ocures
 ** termination of compilation process.
 **
+** Options should be given inside one string, for example: cc -qst 4
+**
+** In input string command line parameter is tested firest character. If the firest character is '-' then 
+** the input parameter is some compilation settings in otherwise it is interpreted as input file name.
+** String with compilation settings is tested character by character in the loop, the settings interpretation
+** is faster and more dynamic then simple testing with standard strcpy or getopt function.
+**
 ** Input settings and parameters:
-** -i = input path to included sourcecode and libraries
+** -i [path] = input path to included sourcecode and libraries
 ** -h = prints help for commandline input parameters interface
 ** -q = quiet mode, no output messages
-** -o = output file name, default output file name is set to out
+** -o [name] = output file name, default output file name is set to out
 ** -s = break compilation process before assembly translation and save as the assembler source code 
 ** -p = break compilation process before lexical analyzation and save as the preprocesed source code
-** -ca = code analyze, return source code info (number of files, number of logical and fyzical lines of code)
+** -a = code analyze, return source code info (number of files, number of logical and fyzical lines of code)
 ** every other parameters are file names from work directory
 **
 */ 
@@ -226,97 +253,99 @@ void core_parse_opt(core* this, int argv, char** argc)
 {
 	if(argv > 1)
 	{
-		int i = 1;
-		while(i < argv)
+		int index = 1;
+		while(index < argv)
 		{
-			if(strcmp(argc[i], "-i") == 0)
+			if(*argc[index] == '-')
 			{
-				i++;
-				if(i < argv)
+				argc[index]++;
+
+				while(*argc[index] != '\0')
 				{
-					char* i_path = (char*) malloc(sizeof(char)* strlen(argc[i]));
-					strcpy(i_path, argc[i]);
-					linked_list_add(this->path_list, i_path);
+					if(*argc[index] == 'i')
+					{
+						index++;
+						if(index < argv)
+						{
+							linked_list_add(this->path_list, argc[index]);
+						}
+						else
+						{
+							this->core_state = state_in_param_error;
+							return;
+						}
+					}
+					else if(*argc[index] == 'h')
+					{
+						this->core_state = state_exit_success;
+						return;
+					}
+					else if(*argc[index] == 'q')
+					{
+						this->quiet_mode = true;
+					}
+					else if(*argc[index] == 'o')
+					{
+						index++;
+						if(index < argv)
+						{
+							this->o_file_name = argc[index];
+						}
+						else
+						{
+							this->core_state = state_in_param_error;
+							return;
+						}
+					}
+					else if(*argc[index] == 's')
+					{
+						this->s_break = true;
+					}
+					else if(*argc[index] == 'p')
+					{
+						this->p_break = true;
+					}
+					else if(*argc[index] == 'a')
+					{
+						this->print_code_info = true;
+					}				
+					else
+					{
+						this->core_state = state_in_param_error;
+						sprintf(this->error_log, "Undefined option: \"%s\"", argc[index]);
+						return;
+					}
+
+					argc[index]++;	
 				}
-				else
-				{
-					this->core_state = status_in_param_error;
-					break;
-				}
-			}
-			else if(strcmp(argc[i], "-h") == 0)
-			{
-				this->core_state = status_exit_success;
-				core_print_help();
-				break;
-			}
-			else if(strcmp(argc[i],"-q") == 0)
-			{
-				this->quiet_mode = true;
-			}
-			else if(strcmp(argc[i], "-o") == 0)
-			{
-				i++;
-				if(i < argv)
-				{
-					this->o_file_name = (char*) malloc(sizeof(char)* strlen(argc[i]));
-					strcpy(this->o_file_name, argc[i]);
-				}
-				else
-				{
-					this->core_state = status_in_param_error;
-					break;
-				}
-			}
-			else if(strcmp(argc[i], "-s") == 0)
-			{
-				this->s_break = true;
-			}
-			else if(strcmp(argc[i], "-p") == 0)
-			{
-				this->p_break = true;
-			}
-			else if(strcmp(argc[i], "-ca") == 0)
-			{
-				this->print_code_info = true;
 			}
 			else
 			{
-				/* load input files names */
-				if(argc[i][0] != '-')
-				{
-					this->core_state = status_ok;
-					char* i_file = (char*) malloc(sizeof(char)*strlen(argc[i]));
-					strcpy(i_file, argc[i]);
-					linked_list_add(this->file_list, i_file);
-				}
-				else
-				{
-					this->core_state = status_in_param_error;
-					break;
-				}
+				this->core_state = state_ok;
+				linked_list_add(this->file_list, argc[index]);
 			}	
 
-			i++;
+			index++;
 		}
 	}
 	else
 	{
-		this->core_state = status_in_param_error;
+		this->core_state = state_in_param_error;
 	}
 }
 
 void core_print_help()
 {
 	printf("Help for CC:\n\n");
-	printf("-i - path for included file from other directory\n");
+	printf("-i [path] - path for included file from other directory\n");
 	printf("-q - quiet mode, no output messages\n");
-	printf("-o - output file name\n");
+	printf("-o [name] - output file name\n");
 	printf("-s - break compilation process before assembly translation and save as assembly source code\n");
 	printf("-p - break compilation process before lexical analyzation and save as preprocesed source code\n");
-	printf("-ca - code analyze, return useful information about source code\n");
+	printf("-c - code analyze, return useful information about source code\n");
 	printf("-h - print this help\n");
 	printf("every other input parameters are interpreted as input file name in work directory\n");
+	printf("\n\nOptions should be placed into one string, for example: cc file_1 file_2 -qst 2");
 }
 
 void core_clean_up(core* this)
@@ -413,8 +442,6 @@ void* linked_list_get_pre(linked_list* this)
 	return NULL;
 }
 
-
-
 /* Main function */
 
 int main(int argv, char** argc)
@@ -427,7 +454,7 @@ int main(int argv, char** argc)
 ** Compilation
 ** 
 */ 
-	if(core_instance->core_state == status_ok)
+	if(core_instance->core_state == state_ok)
 	{
 		
 	}	
@@ -439,22 +466,25 @@ int main(int argv, char** argc)
 */ 
 	switch(core_instance->core_state)
 	{
-		case status_ok:
+		case state_ok:
 			printf("Compilation success\n");
 			break;
-		case status_in_param_error:
-			printf("Input parameter error!\n");
+		case state_exit_success:
 			core_print_help();
 			break;
-
-		case status_no_input_file:
-			printf("No source code file!\n");
+		case state_in_param_error:
+			printf("%s\n", core_instance->error_log);
 			break;
 
-		case status_unknown_error:
+		case state_no_input_file:
+			printf("No input file!\n");
+			break;
 
+		case state_unknown_error:
+		/* common output */	
 		default:
 			printf("Unknown error!\n");
+			core_print_help();
 	}
 
 	core_clean_up(core_instance);
