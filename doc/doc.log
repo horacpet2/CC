@@ -1,0 +1,54 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdfcsplain 2018.10.15)  5 MAR 2019 17:17
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+ encTeX v. Jun. 2004, reencoding enabled
+**doc.tex
+(./doc.tex The format: csplain <Apr. 2016>.
+The cs-fonts are preloaded and A4 size implicitly defined.
+The utf8->iso8859-2 re-encoding of Czech+Slovak alphabet activated by encTeX
+(/home/petr/.texLib/TeXMakro.tex
+\strana=\count28
+\testin=\read0
+\lang=\count29
+\czLang=\count30
+\enLang=\count31
+) (/home/petr/.texLib/pageDimension.tex
+\SirkaStranky=\count32
+\VyskaStranky=\count33
+\NulovyBodH=\count34
+\NulovyBodV=\count35
+\OkrajH=\count36
+\OkrajV=\count37
+\SirkaOdstavce=\count38
+\VyskaOdstavce=\count39
+)
+(/home/petr/.texLib/formating.tex
+\IndexNadpis=\count40
+\IndexSekce=\count41
+\IndexPodSekce=\count42
+
+(/usr/share/texlive/texmf-dist/tex/plain/amsfonts/amssym.tex
+(/usr/share/texlive/texmf-dist/tex/plain/amsfonts/amssym.def
+\msafam=\fam8
+\msbfam=\fam9
+\eufmfam=\fam10
+)))
+(/home/petr/.texLib/content.tex
+\tocfile=\write0
+) (/home/petr/.texLib/lists.tex)
+(/home/petr/.texLib/soul.sty
+\SOUL@word=\toks12
+\SOUL@lasttoken=\toks13
+\SOUL@cmds=\toks14
+\SOUL@buffer=\toks15
+\SOUL@token=\toks16
+\SOUL@spaceskip=\skip18
+\SOUL@ttwidth=\dimen16
+\SOUL@uldp=\dimen17
+\SOUL@ulht=\dimen18
+) (/home/petr/.texLib/FormatA4.tex
+(/home/petr/.texLib/wordBreak.tex))
+!pdfTeX error: pdfcsplain (file ./Obrazky/pokladni_system_use_case.png): cannot
+ find image file
+ ==> Fatal error occurred, no output PDF file produced!

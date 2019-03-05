@@ -53,3 +53,5 @@ dkms.conf
 
 .src
 *~
+CC
+.swp
