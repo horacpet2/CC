@@ -1,0 +1,20 @@
+** TODO **
+* Vyřešit jak přistupovat k prvkům struktury, případně zda jsou struktury nezbytnou součástí gramatiky
+* Syntaxe
+* Sémantika
+* Gramatika
+* Navrhnout, naprogramovat a otestovat prototyp pro syntaktický analyzátor
+* Vytvořit projekt pro testování jednotek projektu
+* Sepsat dokumentaci
+* Zjistit jak funguje likování, linkery
+* Zjistit jaké jsou formáty spustitelných souborů
+* Dodělat a doladit gramatiku a syntaxi jazyka
+* Zjistit informace o typových systémech
+* Navrhnout datovou strukturu proměnné
+* Navrhnout datovou strukturu funkce
+* Navrhnout datovou strukturu popisující analyzovaný zdrojový kód, ze který bude následně optimalizována a bude z něj generován strojový kód
+* popsat rozpad výrazu do stromové struktury (volání funckí se chová podobně jako výrazy)
+* prozkoumat parametry příkazového řádku kompilátoru gcc a navrhnout strukturu parametrů příkazového řádku pro cc
+
+
+** DONE **

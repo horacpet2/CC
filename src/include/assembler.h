@@ -1,5 +1,6 @@
-#ifdef _ASSEMBLER_H_
+#ifndef _ASSEMBLER_H_
 #define _ASSEMBLER_H_
+
 
 
 #endif
